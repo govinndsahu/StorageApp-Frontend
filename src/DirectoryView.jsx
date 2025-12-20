@@ -24,7 +24,7 @@ function DirectoryView({ adminView, isPublic }) {
   const navigate = useNavigate();
 
   // Displayed directory name
-  const [directoryName, setDirectoryName] = useState("My Drive");
+  const [directoryName, setDirectoryName] = useState("My StorageApp");
 
   // Lists of items
   const [directoriesList, setDirectoriesList] = useState([]);
@@ -101,7 +101,7 @@ function DirectoryView({ adminView, isPublic }) {
       setPath(data.path);
 
       // Set directory name
-      setDirectoryName(dirId ? data.name : "My Drive");
+      setDirectoryName(dirId ? data.name : "My StorageApp");
 
       // Reverse directories and files so new items show on top
       setDirectoriesList([...data.directories]);
@@ -126,7 +126,7 @@ function DirectoryView({ adminView, isPublic }) {
       await handleFetchErrors(res);
 
       // Set directory name
-      setDirectoryName(dirId ? data.name : "My Drive");
+      setDirectoryName(dirId ? data.name : "My StorageApp");
 
       // Reverse directories and files so new items show on top
       setDirectoriesList([...data.directories]);
@@ -155,7 +155,7 @@ function DirectoryView({ adminView, isPublic }) {
       setPath(data.path);
 
       // Set directory name
-      setDirectoryName(dirId ? data.name : "My Drive");
+      setDirectoryName(dirId ? data.name : "My StorageApp");
 
       // Reverse directories and files so new items show on top
       setDirectoriesList([...data.directories]);
