@@ -6,7 +6,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add Environment Variables File
-        run: echo 'VITE_API_URL=https://api.govindsahu.me \n VITE_GOOGLE_AUTH_CLIENT_ID=1080347041084-ql6qrkks5ucvunc56fu3qgkkbogniuic.apps.googleusercontent.com' > .env
+        run: touch .env
+      - run: echo 'VITE_API_URL=https://api.govindsahu.me \n VITE_GOOGLE_AUTH_CLIENT_ID=1080347041084-ql6qrkks5ucvunc56fu3qgkkbogniuic.apps.googleusercontent.com' > .env
+      - run: cat .env
 
       - name: Clone GitHub Repository
         uses: actions/checkout@v6
