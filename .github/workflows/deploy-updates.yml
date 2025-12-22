@@ -5,6 +5,12 @@ jobs:
   job:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
       - name: Clone GitHub Repository
         uses: actions/checkout@v6
       - run: npm ci --no-audit --no-fund
