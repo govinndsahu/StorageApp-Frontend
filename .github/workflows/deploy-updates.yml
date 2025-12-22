@@ -1,0 +1,9 @@
+name: Deploy StorageApp Frontend
+on: push
+
+jobs:
+  job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: ls -a
