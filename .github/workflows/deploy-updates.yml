@@ -1,13 +1,20 @@
 name: Deploy StorageApp Frontend
-on: push
+on: [push, workflow_dispatch]
 
 jobs:
-  setup-repository:
+  job:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Clone GitHub Repository
+        uses: actions/checkout@v6
       - run: npm ci --no-audit --no-fund
       - run: npm run test
       - run: npm run build
       - run: ls -a
-      - run: aws -v
+
+      - name: Install AWS CLI
+        run: sudo apt update
+      - run: sudo apt install -y curl unzip
+      - run: curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+      - run: unzip awscliv2.zip
+      - run: aws --version
