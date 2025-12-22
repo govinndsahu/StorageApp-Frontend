@@ -148,7 +148,7 @@ function DirectoryHeader({
           <span key={i}>
             {p?.name?.includes("root") ? (
               <Link key={p._id} to={`/`}>
-                <b className="text-2xl">My Drive</b>
+                <b className="text-2xl">My StorageApp Drive</b>
               </Link>
             ) : (
               <Link key={p._id} to={`/directory/${p._id}`}>
