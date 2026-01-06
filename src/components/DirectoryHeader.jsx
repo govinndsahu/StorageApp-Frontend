@@ -144,7 +144,7 @@ function DirectoryHeader({
     <header className="directory-header">
       {isPublic ? <h1>{directoryName}</h1> : <></>}
       <span>
-        {path.map((p, i) => (
+        {path?.map((p, i) => (
           <span key={i}>
             {p?.name?.includes("root") ? (
               <Link key={p._id} to={`/`}>
