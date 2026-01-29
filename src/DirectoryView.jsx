@@ -17,6 +17,7 @@ import {
   handlePublicDirectoryApi,
   handleRenameApi,
 } from "./apis/directoryApi";
+import { axiosWithCreds } from "./apis/axiosInstances";
 
 function DirectoryView({ adminView, isPublic }) {
   const BASE_URL = import.meta.env.VITE_API_URL;
@@ -169,8 +170,8 @@ function DirectoryView({ adminView, isPublic }) {
     isPublic
       ? getPublicDirData()
       : !adminView
-      ? getDirectoryItems()
-      : getUserDirData();
+        ? getDirectoryItems()
+        : getUserDirData();
     // Reset context menu
     setActiveContextMenu(null);
   }, [dirId]);
@@ -219,7 +220,7 @@ function DirectoryView({ adminView, isPublic }) {
       navigate(
         `${
           isPublic ? "/public" : adminView ? "/admin/user" : ""
-        }/directory/${id}`
+        }/directory/${id}`,
       );
     } else {
       window.location.href = `${BASE_URL}/${
@@ -231,8 +232,9 @@ function DirectoryView({ adminView, isPublic }) {
   /**
    * Select multiple files
    */
-  function handleFileSelect(e) {
+  async function handleFileSelect(e) {
     const selectedFiles = Array.from(e.target.files);
+    const selectedFile = e.target.files[0];
     if (selectedFiles.length === 0) return;
 
     // Build a list of "temp" items
@@ -242,6 +244,7 @@ function DirectoryView({ adminView, isPublic }) {
         file,
         name: file.name,
         size: file.size,
+        type: file.type,
         id: tempId,
         isUploading: false,
       };
@@ -261,18 +264,37 @@ function DirectoryView({ adminView, isPublic }) {
     // Clear file input so the same file can be chosen again if needed
     e.target.value = "";
 
+    const { data } = await axiosWithCreds.post(
+      `${BASE_URL}/${adminView ? "admin/upload/user/file" : "file"}/initiate/${
+        dirId || ""
+      }`,
+      {
+        filename: selectedFile.name,
+        filesize: selectedFile.size,
+        filetype: selectedFile.type,
+      },
+    );
+    if (!data.url) {
+      setUploadQueue([]);
+      return;
+    }
+
     // Start uploading queue if not already uploading
     if (!isUploading) {
       setIsUploading(true);
       // begin the queue process
-      processUploadQueue([...uploadQueue, ...newItems.reverse()]);
+      await processUploadQueue(
+        [...uploadQueue, ...newItems.reverse()],
+        data.url,
+        data.id,
+      );
     }
   }
 
   /**
    * Upload items in queue one by one
    */
-  function processUploadQueue(queue) {
+  async function processUploadQueue(queue, url, id) {
     if (queue.length === 0) {
       // No more items to upload
       setIsUploading(false);
@@ -281,47 +303,43 @@ function DirectoryView({ adminView, isPublic }) {
         isPublic
           ? getPublicDirData()
           : !adminView
-          ? getDirectoryItems()
-          : getUserDirData();
+            ? getDirectoryItems()
+            : getUserDirData();
       }, 1000);
       return;
     }
-
     // Take first item
     const [currentItem, ...restQueue] = queue;
-
     // Mark it as isUploading: true
     setFilesList((prev) =>
       prev.map((f) =>
-        f.id === currentItem.id ? { ...f, isUploading: true } : f
-      )
+        f.id === currentItem.id ? { ...f, isUploading: true } : f,
+      ),
     );
-
     // Start upload
     const xhr = new XMLHttpRequest();
-    xhr.open(
-      "POST",
-      `${BASE_URL}/${adminView ? "admin/upload/user/file" : "file"}/${
-        dirId || ""
-      }`,
-      true
-    );
-    xhr.withCredentials = true;
-    xhr.setRequestHeader("filename", currentItem.name);
-    xhr.setRequestHeader("filesize", currentItem.size);
-
+    xhr.open("PUT", url);
+    xhr.setRequestHeader("Content-Type", currentItem.type);
     xhr.upload.addEventListener("progress", (evt) => {
       if (evt.lengthComputable) {
         const progress = (evt.loaded / evt.total) * 100;
         setProgressMap((prev) => ({ ...prev, [currentItem.id]: progress }));
       }
     });
-
-    xhr.addEventListener("load", () => {
+    xhr.addEventListener("load", async () => {
       // Move on to the next item
       processUploadQueue(restQueue);
+      try {
+        const { data } = await axiosWithCreds.post(
+          `${import.meta.env.VITE_API_URL}/file/upload/complete/${id}`,
+        );
+        if (data.success) {
+          getDirectoryItems();
+        }
+      } catch (error) {
+        console.log(error);
+      }
     });
-
     // If user cancels, remove from the queue
     setUploadXhrMap((prev) => ({ ...prev, [currentItem.id]: xhr }));
     xhr.send(currentItem.file);
@@ -366,8 +384,8 @@ function DirectoryView({ adminView, isPublic }) {
       isPublic
         ? getPublicDirData()
         : !adminView
-        ? getDirectoryItems()
-        : getUserDirData();
+          ? getDirectoryItems()
+          : getUserDirData();
     } catch (error) {
       setErrorMessage(error.message);
     }
@@ -381,8 +399,8 @@ function DirectoryView({ adminView, isPublic }) {
       isPublic
         ? getPublicDirData()
         : !adminView
-        ? getDirectoryItems()
-        : getUserDirData();
+          ? getDirectoryItems()
+          : getUserDirData();
     } catch (error) {
       setErrorMessage(error.message);
     }
@@ -402,8 +420,8 @@ function DirectoryView({ adminView, isPublic }) {
       isPublic
         ? getPublicDirData()
         : !adminView
-        ? getDirectoryItems()
-        : getUserDirData();
+          ? getDirectoryItems()
+          : getUserDirData();
     } catch (error) {
       setErrorMessage(error.message);
     }
@@ -427,7 +445,7 @@ function DirectoryView({ adminView, isPublic }) {
         renameType,
         adminView,
         renameId,
-        renameValue
+        renameValue,
       );
       await handleFetchErrors(response);
 
@@ -438,8 +456,8 @@ function DirectoryView({ adminView, isPublic }) {
       isPublic
         ? getPublicDirData()
         : !adminView
-        ? getDirectoryItems()
-        : getUserDirData();
+          ? getDirectoryItems()
+          : getUserDirData();
     } catch (error) {
       setErrorMessage(error.message);
     }
@@ -485,13 +503,15 @@ function DirectoryView({ adminView, isPublic }) {
         setErrorMessage(data.error);
         return;
       }
-      setPublicPath(`http://localhost:5173/public/directory/${item.id}`);
+      setPublicPath(
+        `${import.meta.env.VITE_APP_URL}/public/directory/${item.id}`,
+      );
       item.isPublic ? setShowSharePopup(false) : setShowSharePopup(true);
       isPublic
         ? getPublicDirData()
         : !adminView
-        ? getDirectoryItems()
-        : getUserDirData();
+          ? getDirectoryItems()
+          : getUserDirData();
     } catch (error) {
       setErrorMessage(error.message);
     }
@@ -511,8 +531,8 @@ function DirectoryView({ adminView, isPublic }) {
       isPublic
         ? getPublicDirData()
         : !adminView
-        ? getDirectoryItems()
-        : getUserDirData();
+          ? getDirectoryItems()
+          : getUserDirData();
     } catch (error) {
       setErrorMessage(error.message);
     }
