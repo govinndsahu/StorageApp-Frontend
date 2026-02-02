@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getDirectoryItemsApi } from "./apis/subscriptionApi";
+import { createSubscriptionApi } from "./apis/subscriptionApi";
 
 const PLAN_CATALOG = {
   monthly: [
@@ -170,7 +170,7 @@ export default function Plans() {
 
   async function handleSelect(plan) {
     try {
-      const res = await getDirectoryItemsApi(plan.id);
+      const res = await createSubscriptionApi(plan.id);
       openRazorpayPopup({ subscriptionId: res.data.subscriptionId });
     } catch (error) {
       console.log(error);
